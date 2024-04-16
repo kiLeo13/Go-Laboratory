@@ -2,17 +2,15 @@ package iteration
 
 import "testing"
 
-const count = 5
-
 func BenchmarkRepeat(b *testing.B) {
 
     for i := 0; i < b.N; i++ {
-        Repeat("a");
+        Repeat("a", 5);
     }
 }
 
 func TestRepeat(t *testing.T) {
-    repeated := Repeat("a")
+    repeated := Repeat("a", 5)
     expected := "aaaaa"
 
     if repeated != expected {
@@ -20,10 +18,10 @@ func TestRepeat(t *testing.T) {
     }
 }
 
-func Repeat(character string) string {
+func Repeat(character string, count int) string {
     var repeated string
 
-    for i := 0; i < count; i++ {
+    for range count {
         repeated += character
     }
 
