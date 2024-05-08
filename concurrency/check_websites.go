@@ -1,7 +1,5 @@
 package concurrency
 
-import "time"
-
 type WebsiteChecker func(string) bool
 type result struct {
     string
@@ -22,8 +20,6 @@ func CheckWebsites(wc WebsiteChecker, urls []string) map[string]bool {
         r := <- resultChannel
         results[r.string] = r.bool
     }
-
-    time.Sleep(2 * time.Second)
 
     return results
 }
