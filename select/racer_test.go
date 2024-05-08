@@ -1,29 +1,49 @@
 package main
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+    "time"
 )
 
 func TestRacer(t *testing.T) {
 
-    slowServer := makeDelayedServer(20 * time.Millisecond);
-    fastServer := makeDelayedServer(0)
-
-    defer slowServer.Close()
-    defer fastServer.Close()
+    t.Run("compares speeds of servers, returning the url of the fastest one", func(t *testing.T) {
+        slowServer := makeDelayedServer(20 * time.Millisecond);
+        fastServer := makeDelayedServer(0)
     
-    slowUrl := slowServer.URL
-    fastUrl := fastServer.URL
+        defer slowServer.Close()
+        defer fastServer.Close()
+        
+        slowUrl := slowServer.URL
+        fastUrl := fastServer.URL
+    
+        want := fastUrl
+        got, err := Racer(slowUrl, fastUrl);
 
-    want := fastUrl
-    got := Racer(slowUrl, fastUrl);
+        if err != nil {
+            t.Fatalf("Did not expect an error but got one %v", err)
+        }
+    
+        if got != want {
+            t.Errorf("got %q, want %q", got, want)
+        }
+    })
 
-    if got != want {
-        t.Errorf("got %q, want %q", got, want)
-    }
+    t.Run("returns an error if a server doesn't respond within 10s", func(t *testing.T) {
+        serverA := makeDelayedServer(11 * time.Second)
+        serverB := makeDelayedServer(12 * time.Second)
+
+        defer serverA.Close()
+        defer serverB.Close()
+
+        _, err := Racer(serverA.URL, serverB.URL)
+
+        if err == nil {
+            t.Error("expected an error but didn't get one")
+        }
+    })
 }
 
 func makeDelayedServer(delay time.Duration) *httptest.Server {
@@ -31,23 +51,4 @@ func makeDelayedServer(delay time.Duration) *httptest.Server {
         time.Sleep(delay)
         w.WriteHeader(http.StatusOK)
     }))
-}
-
-func Racer(a, b string) (winner string) {
-
-    select {
-    case <-ping(a):
-        return a
-    case <-ping(b):
-        return b
-    }
-}
-
-func ping(url string) chan struct{} {
-    ch := make(chan struct{})
-    go func()  {
-        http.Get(url)
-        close(ch)
-    }()
-    return ch;
 }
